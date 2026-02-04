@@ -3,9 +3,9 @@
     <el-card>
       <div class="system-menu-search mb15">
         <el-input v-model="state.listQuery.menu_name" placeholder="请输入菜单名称" style="max-width: 180px"></el-input>
-        <el-button type="primary" class="ml10" @click="getList">查询
+        <el-button v-auth="'system:menu:list'" type="primary" class="ml10" @click="getList">查询
         </el-button>
-        <el-button type="success" class="ml10" @click="onOpenSaveOrUpdate('save', null)">新增
+        <el-button v-auth="'system:menu:add'" type="success" class="ml10" @click="onOpenSaveOrUpdate('save', null)">新增
         </el-button>
       </div>
 
@@ -36,6 +36,7 @@ import {useMenuApi} from '/@/api/v1/system/menu';
 import {RouteRecordRaw} from 'vue-router';
 import {ElButton, ElMessage, ElMessageBox, ElTag} from 'element-plus';
 import EditMenu from '/@/views/system/menu/EditMenu.vue';
+import {auth as authFunction} from '/@/utils/authFunction';
 
 
 const EditRef = ref();
@@ -96,14 +97,16 @@ const state = reactive({
           size: "small",
           onClick: () => {
             onOpenSaveOrUpdate('update', row)
-          }
+          },
+          style: authFunction('system:menu:edit') ? '' : 'display:none'
         }, () => '编辑'),
         h(ElButton, {
           type: "danger",
           size: "small",
           onClick: () => {
             deleted(row)
-          }
+          },
+          style: authFunction('system:menu:delete') ? '' : 'display:none'
         }, () => '删除')
       ])
     },

@@ -6,6 +6,7 @@ from typing import List
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.sqlalchemy import get_db
+from app.core.dependencies import get_current_user_id
 from app.api.v1.system.dept.service import DeptService
 from app.api.v1.system.dept.schema import (
     DeptCreateSchema,
@@ -58,11 +59,9 @@ async def get_dept_tree(
 async def create_dept(
     data: DeptCreateSchema,
     db: AsyncSession = Depends(get_db),
-    # current_user = Depends(get_current_user)  # 后续添加认证
+    current_user_id: int = Depends(get_current_user_id)
 ):
     """创建部门"""
-    # 临时使用固定用户ID，后续替换为当前用户
-    current_user_id = 1
     result = await DeptService.create_dept_service(data, current_user_id, db)
     return success_response(data=result.model_dump(), message="创建成功")
 
@@ -72,11 +71,9 @@ async def update_dept(
     dept_id: int,
     data: DeptUpdateSchema,
     db: AsyncSession = Depends(get_db),
-    # current_user = Depends(get_current_user)  # 后续添加认证
+    current_user_id: int = Depends(get_current_user_id)
 ):
     """更新部门"""
-    # 临时使用固定用户ID，后续替换为当前用户
-    current_user_id = 1
     result = await DeptService.update_dept_service(dept_id, data, current_user_id, db)
     return success_response(data=result.model_dump(), message="更新成功")
 

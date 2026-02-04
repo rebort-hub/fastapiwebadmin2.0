@@ -27,7 +27,7 @@
 					<el-option label="启用" :value="1" />
 					<el-option label="禁用" :value="0" />
 				</el-select>
-				<el-button type="primary" class="ml10" @click="onSearch">
+				<el-button v-auth="'system:dict:type:list'" type="primary" class="ml10" @click="onSearch">
 					<el-icon>
 						<ele-Search />
 					</el-icon>

@@ -4,6 +4,7 @@
       <!-- 操作栏 -->
       <div class="toolbar">
         <el-upload
+          v-auth="'system:file:upload'"
           :action="uploadUrl"
           :headers="uploadHeaders"
           :on-success="handleUploadSuccess"
@@ -97,6 +98,7 @@
           <template #default="{ row }">
             <div class="operation-buttons">
               <el-button
+                v-auth="'system:file:detail'"
                 type="success"
                 size="small"
                 :icon="View"
@@ -105,6 +107,7 @@
                 详情
               </el-button>
               <el-button
+                v-auth="'system:file:download'"
                 type="primary"
                 size="small"
                 :icon="Download"
@@ -113,6 +116,7 @@
                 下载
               </el-button>
               <el-button
+                v-auth="'system:file:edit'"
                 type="info"
                 size="small"
                 @click="editFile(row)"
@@ -120,6 +124,7 @@
                 编辑
               </el-button>
               <el-button
+                v-auth="'system:file:delete'"
                 type="danger"
                 size="small"
                 :icon="Delete"

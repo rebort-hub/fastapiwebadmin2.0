@@ -6,6 +6,7 @@ from typing import List
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.sqlalchemy import get_db
+from app.core.dependencies import get_current_user_id
 from app.api.v1.system.role.service import RoleService
 from app.api.v1.system.role.schema import (
     RoleCreateSchema,
@@ -56,11 +57,9 @@ async def get_role_list(
 async def create_role(
     data: RoleCreateSchema,
     db: AsyncSession = Depends(get_db),
-    # current_user = Depends(get_current_user)  # 后续添加认证
+    current_user_id: int = Depends(get_current_user_id)
 ):
     """创建角色"""
-    # 临时使用固定用户ID，后续替换为当前用户
-    current_user_id = 1
     result = await RoleService.create_role_service(data, current_user_id, db)
     return success_response(data=result.model_dump(), message="创建成功")
 
@@ -70,11 +69,9 @@ async def update_role(
     role_id: int,
     data: RoleUpdateSchema,
     db: AsyncSession = Depends(get_db),
-    # current_user = Depends(get_current_user)  # 后续添加认证
+    current_user_id: int = Depends(get_current_user_id)
 ):
     """更新角色"""
-    # 临时使用固定用户ID，后续替换为当前用户
-    current_user_id = 1
     result = await RoleService.update_role_service(role_id, data, current_user_id, db)
     return success_response(data=result.model_dump(), message="更新成功")
 

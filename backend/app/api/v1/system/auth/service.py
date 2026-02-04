@@ -122,6 +122,8 @@ class AuthService:
             登录响应（包含令牌）
         """
         from app.api.v1.system.log.service import LoginLogService
+        from app.api.v1.monitor.online.service import OnlineUserService
+        from app.utils.common import get_str_uuid
         
         crud = UserCRUD(db)
         
@@ -176,14 +178,17 @@ class AuthService:
                 detail="用户已被禁用"
             )
         
-        # 创建访问令牌
+        # 生成会话ID
+        session_id = get_str_uuid()
+        
+        # 创建访问令牌（包含session_id）
         access_token = cls.create_access_token(
-            data={"sub": str(user.id), "username": user.username}
+            data={"sub": str(user.id), "username": user.username, "session_id": session_id}
         )
         
         # 创建刷新令牌
         refresh_token = cls.create_refresh_token(
-            data={"sub": str(user.id), "username": user.username}
+            data={"sub": str(user.id), "username": user.username, "session_id": session_id}
         )
         
         # 更新登录信息
@@ -202,6 +207,28 @@ class AuthService:
             message="登录成功",
             db=db
         )
+        
+        # 清理该用户的旧会话（同一用户重新登录时）
+        try:
+            from app.api.v1.monitor.online.service import OnlineUserService
+            await OnlineUserService.force_offline(user.id)
+        except Exception as e:
+            print(f"[在线用户] 清理旧会话失败: {e}")
+        
+        # 添加在线用户记录
+        try:
+            user_agent = request.headers.get("user-agent", "")
+            await OnlineUserService.add_online_user(
+                user_id=user.id,
+                username=user.username,
+                nickname=user.nickname,
+                avatar=user.avatar,
+                session_id=session_id,
+                ip_address=client_ip,
+                user_agent=user_agent
+            )
+        except Exception as e:
+            print(f"[在线用户] 添加在线用户失败: {e}")
         
         return LoginResponseSchema(
             access_token=access_token,
@@ -435,6 +462,7 @@ class AuthService:
         
         user_id = payload.get("sub")
         username = payload.get("username")
+        session_id = payload.get("session_id")
         
         if not user_id or not username:
             raise HTTPException(
@@ -452,14 +480,14 @@ class AuthService:
                 detail="用户不存在或已被禁用"
             )
         
-        # 创建新的访问令牌
+        # 创建新的访问令牌（保持相同的session_id）
         access_token = cls.create_access_token(
-            data={"sub": user_id, "username": username}
+            data={"sub": user_id, "username": username, "session_id": session_id}
         )
         
-        # 创建新的刷新令牌
+        # 创建新的刷新令牌（保持相同的session_id）
         refresh_token = cls.create_refresh_token(
-            data={"sub": user_id, "username": username}
+            data={"sub": user_id, "username": username, "session_id": session_id}
         )
         
         return LoginResponseSchema(
@@ -482,8 +510,18 @@ class AuthService:
             token: JWT令牌
             db: 数据库会话
         """
+        from app.api.v1.monitor.online.service import OnlineUserService
+        
         # 验证令牌
         payload = cls.verify_token(token)
+        
+        # 获取用户ID和会话ID
+        user_id = payload.get("sub")
+        session_id = payload.get("session_id")
+        
+        # 移除在线用户记录
+        if user_id and session_id:
+            await OnlineUserService.remove_online_user(int(user_id), session_id)
         
         # 实际项目中可以将令牌加入黑名单
         # 这里简单处理，只验证令牌有效性

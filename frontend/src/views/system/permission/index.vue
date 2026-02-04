@@ -9,8 +9,8 @@
           <el-option label="数据权限" :value="3"></el-option>
           <el-option label="API权限" :value="4"></el-option>
         </el-select>
-        <el-button type="primary" class="ml10" @click="getList">查询</el-button>
-        <el-button type="success" class="ml10" @click="onOpenEdit('add', null)">新增权限</el-button>
+        <el-button v-auth="'system:permission:list'" type="primary" class="ml10" @click="getList">查询</el-button>
+        <el-button v-auth="'system:permission:add'" type="success" class="ml10" @click="onOpenEdit('add', null)">新增权限</el-button>
       </div>
 
       <z-table
@@ -38,6 +38,7 @@ import {h, onMounted, reactive, ref} from 'vue';
 import {ElButton, ElMessage, ElMessageBox, ElTag} from 'element-plus';
 import EditPermission from '/@/views/system/permission/EditPermission.vue';
 import {usePermissionApi} from '/@/api/v1/system/permission';
+import {auth as authFunction} from '/@/utils/authFunction';
 
 const EditRef = ref();
 const tableRef = ref();
@@ -108,7 +109,8 @@ const state = reactive({
           size: "small",
           onClick: () => {
             onOpenEdit('edit', row)
-          }
+          },
+          style: authFunction('system:permission:edit') ? '' : 'display:none'
         }, () => '编辑'));
         
         // 删除按钮 - 需要删除权限
@@ -117,7 +119,8 @@ const state = reactive({
           size: "small",
           onClick: () => {
             deleted(row)
-          }
+          },
+          style: authFunction('system:permission:delete') ? '' : 'display:none'
         }, () => '删除'));
         
         return h("div", null, buttons);

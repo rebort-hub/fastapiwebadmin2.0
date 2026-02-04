@@ -6,6 +6,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.sqlalchemy import get_db
+from app.core.dependencies import get_current_user_id
 from app.api.v1.system.menu.service import MenuService
 from app.api.v1.system.menu.schema import (
     MenuCreateSchema,
@@ -79,11 +80,9 @@ async def get_menu_detail(
 async def create_menu(
     data: MenuCreateSchema,
     db: AsyncSession = Depends(get_db),
-    # current_user = Depends(get_current_user)  # 后续添加认证
+    current_user_id: int = Depends(get_current_user_id)
 ):
     """创建菜单"""
-    # 临时使用固定用户ID，后续替换为当前用户
-    current_user_id = 1
     result = await MenuService.create_menu_service(data, current_user_id, db)
     return success_response(data=result.model_dump(), message="创建成功")
 
@@ -93,11 +92,9 @@ async def update_menu(
     menu_id: int,
     data: MenuUpdateSchema,
     db: AsyncSession = Depends(get_db),
-    # current_user = Depends(get_current_user)  # 后续添加认证
+    current_user_id: int = Depends(get_current_user_id)
 ):
     """更新菜单"""
-    # 临时使用固定用户ID，后续替换为当前用户
-    current_user_id = 1
     result = await MenuService.update_menu_service(menu_id, data, current_user_id, db)
     return success_response(data=result.model_dump(), message="更新成功")
 

@@ -8,6 +8,9 @@ import {handlerRedirectUrl} from "/@/utils/urlHandler";
 const cancelToken = axios.CancelToken
 const source = cancelToken.source()
 
+// 防止重复弹窗
+let isShowingAuthDialog = false;
+
 // 配置新建一个 axios 实例
 const service: AxiosInstance = axios.create({
 	baseURL: getApiBaseUrl(),
@@ -150,7 +153,36 @@ service.interceptors.response.use(
 				const errorMessage = errorData.detail || errorData.message || errorData.msg || error.response.statusText;
 				error.message = errorMessage;
 				
-				// 对于业务错误（如400），直接抛出错误让组件处理
+				// 处理 401 未授权错误
+				if (error.response.status === 401) {
+					// 统一处理 token 过期
+					if (isShowingAuthDialog) {
+						return Promise.reject(error);
+					}
+					isShowingAuthDialog = true;
+					
+					ElMessageBox.confirm('登录信息已失效，是否重新登录？', '系统提示', {
+						confirmButtonText: '确认',
+						cancelButtonText: '取消',
+						type: 'warning',
+						showClose: false,
+						closeOnClickModal: false,
+						closeOnPressEscape: false,
+						center: true
+					})
+						.then(() => {
+							Session.clear(); // 清除浏览器全部临时缓存
+							window.location.href = handlerRedirectUrl() || '/'; // 去登录页
+						})
+						.catch(() => {
+							// 用户点击取消，也清除缓存
+							Session.clear();
+							isShowingAuthDialog = false;
+						});
+					return Promise.reject(error);
+				}
+				
+				// 对于其他业务错误（如400），直接抛出错误让组件处理
 				if (error.response.status >= 400 && error.response.status < 500) {
 					const businessError: any = new Error(errorMessage);
 					businessError.response = error.response;

@@ -6,6 +6,7 @@ from typing import List
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.sqlalchemy import get_db
+from app.core.dependencies import get_current_user_id
 from app.api.v1.system.dict.service import DictTypeService, DictDataService
 from app.api.v1.system.dict.schema import (
     DictTypeCreateSchema,
@@ -74,10 +75,10 @@ async def get_dict_type_list(
 @router.post("/type", summary="创建字典类型")
 async def create_dict_type(
     data: DictTypeCreateSchema,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user_id: int = Depends(get_current_user_id)
 ):
     """创建字典类型"""
-    current_user_id = 1  # 临时使用固定用户ID
     result = await DictTypeService.create_dict_type_service(data, current_user_id, db)
     return success_response(data=result.model_dump(), message="创建成功")
 
@@ -86,10 +87,10 @@ async def create_dict_type(
 async def update_dict_type(
     dict_type_id: int,
     data: DictTypeUpdateSchema,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user_id: int = Depends(get_current_user_id)
 ):
     """更新字典类型"""
-    current_user_id = 1  # 临时使用固定用户ID
     result = await DictTypeService.update_dict_type_service(dict_type_id, data, current_user_id, db)
     return success_response(data=result.model_dump(), message="更新成功")
 
@@ -158,10 +159,10 @@ async def get_dict_data_by_type(
 @router.post("/data", summary="创建字典数据")
 async def create_dict_data(
     data: DictDataCreateSchema,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user_id: int = Depends(get_current_user_id)
 ):
     """创建字典数据"""
-    current_user_id = 1  # 临时使用固定用户ID
     result = await DictDataService.create_dict_data_service(data, current_user_id, db)
     return success_response(data=result.model_dump(), message="创建成功")
 
@@ -170,10 +171,10 @@ async def create_dict_data(
 async def update_dict_data(
     dict_data_id: int,
     data: DictDataUpdateSchema,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user_id: int = Depends(get_current_user_id)
 ):
     """更新字典数据"""
-    current_user_id = 1  # 临时使用固定用户ID
     result = await DictDataService.update_dict_data_service(dict_data_id, data, current_user_id, db)
     return success_response(data=result.model_dump(), message="更新成功")
 

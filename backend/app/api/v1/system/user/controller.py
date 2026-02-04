@@ -3,9 +3,10 @@
 """
 
 from typing import List
-from fastapi import APIRouter, Depends, Query, Body, Header, HTTPException, status
+from fastapi import APIRouter, Depends, Query, Body
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.sqlalchemy import get_db
+from app.core.dependencies import get_current_user_id
 from app.api.v1.system.user.service import UserService
 from app.api.v1.system.user.schema import (
     UserCreateSchema,
@@ -20,34 +21,6 @@ from app.api.v1.system.user.schema import (
 from app.common.response import success_response
 
 router = APIRouter()
-
-
-async def get_current_user_id(
-    authorization: str = Header(..., description="Bearer token")
-) -> int:
-    """从token中获取当前用户ID"""
-    from app.api.v1.system.auth.service import AuthService
-    
-    # 提取token
-    if not authorization.startswith("Bearer "):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="无效的认证方式"
-        )
-    
-    token = authorization.replace("Bearer ", "")
-    
-    # 验证token
-    payload = AuthService.verify_token(token)
-    user_id = payload.get("sub")
-    
-    if user_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="令牌无效"
-        )
-    
-    return int(user_id)
 
 
 @router.put("/profile", summary="更新个人信息")
@@ -119,11 +92,9 @@ async def get_user_list(
 async def create_user(
     data: UserCreateSchema,
     db: AsyncSession = Depends(get_db),
-    # current_user = Depends(get_current_user)  # 后续添加认证
+    current_user_id: int = Depends(get_current_user_id)
 ):
     """创建用户"""
-    # 临时使用固定用户ID，后续替换为当前用户
-    current_user_id = 1
     result = await UserService.create_user_service(data, current_user_id, db)
     return success_response(data=result.model_dump(), message="创建成功")
 
@@ -131,7 +102,8 @@ async def create_user(
 @router.delete("", summary="删除用户")
 async def delete_user(
     ids: List[int] = Query(..., description="用户ID列表"),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user_id: int = Depends(get_current_user_id)
 ):
     """删除用户"""
     await UserService.delete_user_service(ids, db)
@@ -153,11 +125,9 @@ async def update_user(
     user_id: int,
     data: UserUpdateSchema,
     db: AsyncSession = Depends(get_db),
-    # current_user = Depends(get_current_user)  # 后续添加认证
+    current_user_id: int = Depends(get_current_user_id)
 ):
     """更新用户"""
-    # 临时使用固定用户ID，后续替换为当前用户
-    current_user_id = 1
     result = await UserService.update_user_service(user_id, data, current_user_id, db)
     return success_response(data=result.model_dump(), message="更新成功")
 
@@ -166,7 +136,8 @@ async def update_user(
 async def change_user_password(
     user_id: int,
     data: UserPasswordSchema,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user_id: int = Depends(get_current_user_id)
 ):
     """修改指定用户密码（管理员操作）"""
     await UserService.change_password_service(user_id, data, db)
@@ -177,7 +148,8 @@ async def change_user_password(
 async def reset_password(
     user_id: int,
     data: UserResetPasswordSchema,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user_id: int = Depends(get_current_user_id)
 ):
     """重置密码（管理员操作）"""
     await UserService.reset_password_service(user_id, data, db)
@@ -188,7 +160,8 @@ async def reset_password(
 async def update_status(
     user_id: int,
     status: int = Body(..., embed=True, ge=0, le=1, description="状态"),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user_id: int = Depends(get_current_user_id)
 ):
     """更新用户状态"""
     await UserService.update_status_service(user_id, status, db)

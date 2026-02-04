@@ -6,6 +6,7 @@ from typing import List
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.sqlalchemy import get_db
+from app.core.dependencies import get_current_user_id
 from app.api.v1.system.permission.service import PermissionService
 from app.api.v1.system.permission.schema import (
     PermissionCreateSchema,
@@ -75,10 +76,10 @@ async def get_all_permissions(
 @router.post("", summary="创建权限")
 async def create_permission(
     data: PermissionCreateSchema,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user_id: int = Depends(get_current_user_id)
 ):
     """创建权限"""
-    current_user_id = 1  # 临时使用固定用户ID
     result = await PermissionService.create_permission_service(data, current_user_id, db)
     return success_response(data=result.model_dump(), message="创建成功")
 
@@ -87,10 +88,10 @@ async def create_permission(
 async def update_permission(
     permission_id: int,
     data: PermissionUpdateSchema,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user_id: int = Depends(get_current_user_id)
 ):
     """更新权限"""
-    current_user_id = 1  # 临时使用固定用户ID
     result = await PermissionService.update_permission_service(permission_id, data, current_user_id, db)
     return success_response(data=result.model_dump(), message="更新成功")
 

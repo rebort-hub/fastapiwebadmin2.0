@@ -32,6 +32,9 @@ class LogMiddleware(BaseHTTPMiddleware):
         """处理请求"""
         start_time = time.time()
         
+        # 更新用户活动（对所有认证请求）
+        await self._update_user_activity(request)
+        
         # 检查是否需要跳过日志记录
         if self._should_skip_logging(request):
             return await call_next(request)
@@ -58,6 +61,25 @@ class LogMiddleware(BaseHTTPMiddleware):
             print(f"日志记录失败: {str(e)}")
         
         return response
+    
+    async def _update_user_activity(self, request: Request):
+        """更新用户活动时间"""
+        try:
+            authorization = request.headers.get("Authorization")
+            if authorization and authorization.startswith("Bearer "):
+                from app.api.v1.system.auth.service import AuthService
+                from app.api.v1.monitor.online.service import OnlineUserService
+                
+                token = authorization.replace("Bearer ", "")
+                payload = AuthService.verify_token(token)
+                user_id = payload.get("sub")
+                session_id = payload.get("session_id")
+                
+                if user_id and session_id:
+                    # 更新用户活动时间
+                    await OnlineUserService.update_user_activity(int(user_id), session_id)
+        except Exception as e:
+            pass  # 静默失败，不影响正常请求
     
     def _should_skip_logging(self, request: Request) -> bool:
         """判断是否应该跳过日志记录"""

@@ -26,7 +26,7 @@
           class="ml10"
           style="width: 350px"
         />
-        <el-button type="primary" class="ml10" @click="search">
+        <el-button v-auth="'system:log:operation:list'" type="primary" class="ml10" @click="search">
           <el-icon><Search /></el-icon>
           查询
         </el-button>
@@ -109,6 +109,7 @@ import {ElTag, ElButton, ElMessage, ElMessageBox} from 'element-plus';
 import {Search, Refresh, View, Delete} from '@element-plus/icons-vue';
 import {useLogApi} from '/@/api/v1/system/log';
 import {formatDateTime} from '/@/utils/formatTime';
+import {auth as authFunction} from '/@/utils/authFunction';
 
 interface TableDataRow {
   id: number;
@@ -196,7 +197,8 @@ const state = reactive<StateRow>({
           h(ElButton, {
             type: 'primary',
             size: 'small',
-            onClick: () => viewDetail(row)
+            onClick: () => viewDetail(row),
+            style: authFunction('system:log:operation:detail') ? '' : 'display:none'
           }, {
             default: () => [h(View), '详情']
           }),
@@ -204,7 +206,7 @@ const state = reactive<StateRow>({
             type: 'danger',
             size: 'small',
             onClick: () => deleteLog(row),
-            style: 'margin-left: 8px;'
+            style: 'margin-left: 8px;' + (authFunction('system:log:operation:delete') ? '' : 'display:none')
           }, {
             default: () => [h(Delete), '删除']
           })

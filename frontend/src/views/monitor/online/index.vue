@@ -128,21 +128,21 @@ const tableRef = ref();
 const state = reactive<StateRow>({
   columns: [
     {
-      key: 'avatar', label: '头像', width: '80', align: 'center', show: true,
+      key: 'avatar', label: '头像', width: '70', align: 'center', show: true,
       render: (row: OnlineUserInfo) => {
         return h(ElAvatar, {
           size: 40,
-          src: row.avatar,
+          src: row.avatar || undefined,
           alt: row.nickname
         }, () => row.nickname?.charAt(0) || row.username?.charAt(0) || 'U')
       }
     },
-    { key: 'username', label: '用户名', width: '120', align: 'center', show: true },
-    { key: 'nickname', label: '昵称', width: '120', align: 'center', show: true },
-    { key: 'ip_address', label: 'IP地址', width: '140', align: 'center', show: true },
-    { key: 'location', label: '登录地点', width: '120', align: 'center', show: true },
+    { key: 'username', label: '用户名', minWidth: '100', align: 'center', show: true },
+    { key: 'nickname', label: '昵称', minWidth: '100', align: 'center', show: true },
+    { key: 'ip_address', label: 'IP地址', width: '130', align: 'center', show: true },
+    { key: 'location', label: '登录地点', width: '100', align: 'center', show: true },
     { key: 'browser', label: '浏览器', width: '120', align: 'center', show: true },
-    { key: 'os', label: '操作系统', width: '120', align: 'center', show: true },
+    { key: 'os', label: '操作系统', width: '110', align: 'center', show: true },
     {
       key: 'is_active', label: '状态', width: '80', align: 'center', show: true,
       render: (row: OnlineUserInfo) => {
@@ -152,9 +152,9 @@ const state = reactive<StateRow>({
         }, () => row.is_active ? '活跃' : '空闲')
       }
     },
-    { key: 'login_time', label: '登录时间', width: '180', align: 'center', show: true },
-    { key: 'last_activity', label: '最后活动', width: '180', align: 'center', show: true },
-    { key: 'duration', label: '在线时长', width: '120', align: 'center', show: true },
+    { key: 'login_time', label: '登录时间', width: '160', align: 'center', show: true },
+    { key: 'last_activity', label: '最后活动', width: '160', align: 'center', show: true },
+    { key: 'duration', label: '在线时长', width: '100', align: 'center', show: true },
     {
       key: 'action', label: '操作', width: '100', align: 'center', show: true, fixed: 'right',
       render: (row: OnlineUserInfo) => {
@@ -164,7 +164,7 @@ const state = reactive<StateRow>({
             size: 'small',
             onClick: () => showForceOfflineDialog(row)
           }, {
-            default: () => [h(SwitchButton), '下线']
+            default: () => '下线'
           })
         ])
       }

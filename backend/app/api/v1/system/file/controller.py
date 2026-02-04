@@ -3,10 +3,11 @@
 """
 
 from typing import List
-from fastapi import APIRouter, UploadFile, File, Depends, Query, Request, Form, Header, HTTPException, status
+from fastapi import APIRouter, UploadFile, File, Depends, Query, Request, Form
 from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.sqlalchemy import get_db
+from app.core.dependencies import get_current_user_id
 from app.api.v1.system.file.service import FileService
 from app.api.v1.system.file.schema import (
     FileQuerySchema,
@@ -17,34 +18,6 @@ from app.api.v1.system.file.schema import (
 from app.common.response import success_response
 
 router = APIRouter()
-
-
-async def get_current_user_id(
-    authorization: str = Header(..., description="Bearer token")
-) -> int:
-    """从token中获取当前用户ID"""
-    from app.api.v1.system.auth.service import AuthService
-    
-    # 提取token
-    if not authorization.startswith("Bearer "):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="无效的认证方式"
-        )
-    
-    token = authorization.replace("Bearer ", "")
-    
-    # 验证token
-    payload = AuthService.verify_token(token)
-    user_id = payload.get("sub")
-    
-    if user_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="令牌无效"
-        )
-    
-    return int(user_id)
 
 
 @router.post("/upload", summary="上传文件")

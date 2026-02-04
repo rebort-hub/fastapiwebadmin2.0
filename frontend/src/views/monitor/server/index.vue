@@ -1,235 +1,336 @@
 <template>
-  <div class="monitor-server-container app-container">
-    <el-row :gutter="20">
-      <!-- 服务器基本信息 -->
-      <el-col :span="24">
-        <el-card class="mb20">
+  <div class="app-container">
+    <!-- CPU 和 内存使用情况 -->
+    <el-row :gutter="16">
+      <el-col :span="12" class="mb-4">
+        <el-card :loading="state.loading" shadow="hover">
           <template #header>
-            <div class="card-header">
-              <span>服务器信息</span>
-              <el-button type="primary" size="small" @click="refreshData">
-                <el-icon><Refresh /></el-icon>
-                刷新
-              </el-button>
+            <div class="flex items-center gap-2">
+              <el-icon><Cpu /></el-icon>
+              <span>CPU使用情况</span>
+              <el-tooltip content="展示CPU核心数及使用率">
+                <el-icon><QuestionFilled /></el-icon>
+              </el-tooltip>
             </div>
           </template>
-          <el-row :gutter="20" v-if="state.serverInfo">
-            <el-col :span="6">
-              <div class="info-item">
-                <div class="info-label">主机名</div>
-                <div class="info-value">{{ state.serverInfo.hostname }}</div>
-              </div>
+          <el-row :gutter="16" v-if="state.cpuInfo">
+            <!-- CPU核心数卡片 -->
+            <el-col :span="12">
+              <el-card shadow="hover">
+                <span class="card-title">核心数</span>
+                <el-tooltip :content="`物理核心: ${state.cpuInfo.physical_cores}, 逻辑核心: ${state.cpuInfo.logical_cores}`">
+                  <div class="text-center mb-4">
+                    <el-progress
+                      type="circle"
+                      :percentage="100"
+                      :format="() => `${state.cpuInfo.logical_cores}`"
+                    />
+                  </div>
+                </el-tooltip>
+                <el-descriptions :column="1" border size="small">
+                  <el-descriptions-item label="物理核心">
+                    {{ state.cpuInfo.physical_cores }}
+                  </el-descriptions-item>
+                  <el-descriptions-item label="逻辑核心">
+                    {{ state.cpuInfo.logical_cores }}
+                  </el-descriptions-item>
+                  <el-descriptions-item label="当前频率">
+                    {{ state.cpuInfo.current_frequency.toFixed(0) }} MHz
+                  </el-descriptions-item>
+                </el-descriptions>
+              </el-card>
             </el-col>
-            <el-col :span="6">
-              <div class="info-item">
-                <div class="info-label">操作系统</div>
-                <div class="info-value">{{ state.serverInfo.platform }}</div>
-              </div>
+            <!-- CPU使用率卡片 -->
+            <el-col :span="12">
+              <el-card shadow="hover" class="h-full">
+                <span class="card-title">使用率</span>
+                <el-tooltip :content="state.cpuInfo.usage_percent.toFixed(1) + '%'">
+                  <div class="text-center mb-4">
+                    <el-progress
+                      type="circle"
+                      :percentage="state.cpuInfo.usage_percent"
+                      :status="
+                        state.cpuInfo.usage_percent > 80
+                          ? 'exception'
+                          : state.cpuInfo.usage_percent > 60
+                            ? 'warning'
+                            : 'success'
+                      "
+                    />
+                  </div>
+                </el-tooltip>
+                <el-descriptions :column="1" border size="small">
+                  <el-descriptions-item label="CPU使用率">
+                    {{ state.cpuInfo.usage_percent.toFixed(1) }}%
+                  </el-descriptions-item>
+                  <el-descriptions-item label="最大频率">
+                    {{ state.cpuInfo.max_frequency.toFixed(0) }} MHz
+                  </el-descriptions-item>
+                  <el-descriptions-item label="最小频率">
+                    {{ state.cpuInfo.min_frequency.toFixed(0) }} MHz
+                  </el-descriptions-item>
+                </el-descriptions>
+              </el-card>
             </el-col>
-            <el-col :span="6">
-              <div class="info-item">
-                <div class="info-label">系统架构</div>
-                <div class="info-value">{{ state.serverInfo.architecture }}</div>
-              </div>
+          </el-row>
+        </el-card>
+      </el-col>
+
+      <el-col :span="12" class="mb-4">
+        <el-card :loading="state.loading" shadow="hover">
+          <template #header>
+            <div class="flex items-center gap-2">
+              <el-icon><Memo /></el-icon>
+              <span>内存使用情况</span>
+              <el-tooltip content="展示系统内存和交换分区使用情况">
+                <el-icon><QuestionFilled /></el-icon>
+              </el-tooltip>
+            </div>
+          </template>
+          <el-row :gutter="16" v-if="state.memoryInfo">
+            <!-- 系统内存卡片 -->
+            <el-col :span="12">
+              <el-card shadow="hover" class="h-full">
+                <span class="card-title">系统内存</span>
+                <el-tooltip :content="state.memoryInfo.usage_percent.toFixed(1) + '%'">
+                  <div class="text-center mb-4">
+                    <el-progress
+                      type="circle"
+                      :percentage="state.memoryInfo.usage_percent"
+                      :status="
+                        state.memoryInfo.usage_percent > 80
+                          ? 'exception'
+                          : state.memoryInfo.usage_percent > 60
+                            ? 'warning'
+                            : 'success'
+                      "
+                    />
+                  </div>
+                </el-tooltip>
+                <el-descriptions :column="1" border size="small">
+                  <el-descriptions-item label="总内存">
+                    {{ formatBytes(state.memoryInfo.total) }}
+                  </el-descriptions-item>
+                  <el-descriptions-item label="已用内存">
+                    {{ formatBytes(state.memoryInfo.used) }}
+                  </el-descriptions-item>
+                  <el-descriptions-item label="可用内存">
+                    {{ formatBytes(state.memoryInfo.available) }}
+                  </el-descriptions-item>
+                </el-descriptions>
+              </el-card>
             </el-col>
-            <el-col :span="6">
-              <div class="info-item">
-                <div class="info-label">启动时间</div>
-                <div class="info-value">{{ state.serverInfo.boot_time }}</div>
-              </div>
+            <!-- 交换分区卡片 -->
+            <el-col :span="12">
+              <el-card shadow="hover" class="h-full">
+                <span class="card-title">交换分区</span>
+                <el-tooltip :content="state.memoryInfo.swap_percent.toFixed(1) + '%'">
+                  <div class="text-center mb-4">
+                    <el-progress
+                      type="circle"
+                      :percentage="state.memoryInfo.swap_percent"
+                      :status="
+                        state.memoryInfo.swap_percent > 80
+                          ? 'exception'
+                          : state.memoryInfo.swap_percent > 60
+                            ? 'warning'
+                            : 'success'
+                      "
+                    />
+                  </div>
+                </el-tooltip>
+                <el-descriptions :column="1" border size="small">
+                  <el-descriptions-item label="总大小">
+                    {{ formatBytes(state.memoryInfo.swap_total) }}
+                  </el-descriptions-item>
+                  <el-descriptions-item label="已用">
+                    {{ formatBytes(state.memoryInfo.swap_used) }}
+                  </el-descriptions-item>
+                  <el-descriptions-item label="空闲">
+                    {{ formatBytes(state.memoryInfo.swap_free) }}
+                  </el-descriptions-item>
+                </el-descriptions>
+              </el-card>
             </el-col>
           </el-row>
         </el-card>
       </el-col>
     </el-row>
 
-    <el-row :gutter="20">
-      <!-- CPU信息 -->
-      <el-col :span="12">
-        <el-card class="mb20">
+    <!-- 服务器基本信息 -->
+    <el-row>
+      <el-col :span="24" class="mb-4">
+        <el-card :loading="state.loading" shadow="hover">
           <template #header>
-            <span>CPU信息</span>
-          </template>
-          <div v-if="state.cpuInfo">
-            <div class="progress-item">
-              <div class="progress-label">CPU使用率</div>
-              <el-progress 
-                :percentage="state.cpuInfo.usage_percent" 
-                :color="getCPUColor(state.cpuInfo.usage_percent)"
-                :stroke-width="20"
-              />
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <el-icon><Monitor /></el-icon>
+                <span class="font-medium">服务器基本信息</span>
+                <el-tooltip content="展示服务器基本配置信息">
+                  <el-icon><QuestionFilled /></el-icon>
+                </el-tooltip>
+              </div>
+              <el-button type="primary" size="small" @click="refreshData">
+                <el-icon><Refresh /></el-icon>
+                刷新
+              </el-button>
             </div>
-            <el-row :gutter="10" class="mt15">
-              <el-col :span="12">
-                <div class="info-item">
-                  <div class="info-label">物理核心</div>
-                  <div class="info-value">{{ state.cpuInfo.physical_cores }}</div>
-                </div>
-              </el-col>
-              <el-col :span="12">
-                <div class="info-item">
-                  <div class="info-label">逻辑核心</div>
-                  <div class="info-value">{{ state.cpuInfo.logical_cores }}</div>
-                </div>
-              </el-col>
-            </el-row>
-            <el-row :gutter="10" class="mt10">
-              <el-col :span="12">
-                <div class="info-item">
-                  <div class="info-label">当前频率</div>
-                  <div class="info-value">{{ state.cpuInfo.current_frequency.toFixed(0) }} MHz</div>
-                </div>
-              </el-col>
-              <el-col :span="12">
-                <div class="info-item">
-                  <div class="info-label">最大频率</div>
-                  <div class="info-value">{{ state.cpuInfo.max_frequency.toFixed(0) }} MHz</div>
-                </div>
-              </el-col>
-            </el-row>
-          </div>
-        </el-card>
-      </el-col>
-
-      <!-- 内存信息 -->
-      <el-col :span="12">
-        <el-card class="mb20">
-          <template #header>
-            <span>内存信息</span>
           </template>
-          <div v-if="state.memoryInfo">
-            <div class="progress-item">
-              <div class="progress-label">内存使用率</div>
-              <el-progress 
-                :percentage="state.memoryInfo.usage_percent" 
-                :color="getMemoryColor(state.memoryInfo.usage_percent)"
-                :stroke-width="20"
-              />
-            </div>
-            <el-row :gutter="10" class="mt15">
-              <el-col :span="12">
-                <div class="info-item">
-                  <div class="info-label">总内存</div>
-                  <div class="info-value">{{ formatBytes(state.memoryInfo.total) }}</div>
-                </div>
-              </el-col>
-              <el-col :span="12">
-                <div class="info-item">
-                  <div class="info-label">已用内存</div>
-                  <div class="info-value">{{ formatBytes(state.memoryInfo.used) }}</div>
-                </div>
-              </el-col>
-            </el-row>
-            <el-row :gutter="10" class="mt10">
-              <el-col :span="12">
-                <div class="info-item">
-                  <div class="info-label">可用内存</div>
-                  <div class="info-value">{{ formatBytes(state.memoryInfo.available) }}</div>
-                </div>
-              </el-col>
-              <el-col :span="12">
-                <div class="info-item">
-                  <div class="info-label">交换分区</div>
-                  <div class="info-value">{{ formatBytes(state.memoryInfo.swap_total) }}</div>
-                </div>
-              </el-col>
-            </el-row>
-          </div>
+          <el-descriptions :column="3" border v-if="state.serverInfo">
+            <el-descriptions-item label="主机名">
+              {{ state.serverInfo.hostname }}
+            </el-descriptions-item>
+            <el-descriptions-item label="操作系统">
+              {{ state.serverInfo.platform }}
+            </el-descriptions-item>
+            <el-descriptions-item label="系统架构">
+              {{ state.serverInfo.architecture }}
+            </el-descriptions-item>
+            <el-descriptions-item label="处理器">
+              {{ state.serverInfo.processor }}
+            </el-descriptions-item>
+            <el-descriptions-item label="启动时间">
+              {{ state.serverInfo.boot_time }}
+            </el-descriptions-item>
+            <el-descriptions-item label="运行时长">
+              {{ state.serverInfo.uptime }}
+            </el-descriptions-item>
+          </el-descriptions>
         </el-card>
       </el-col>
     </el-row>
 
-    <el-row :gutter="20">
-      <!-- 磁盘信息 -->
-      <el-col :span="12">
-        <el-card class="mb20">
+    <!-- 磁盘使用情况 -->
+    <el-row>
+      <el-col :span="24" class="mb-4">
+        <el-card :loading="state.loading" shadow="hover">
           <template #header>
-            <span>磁盘信息</span>
-          </template>
-          <div v-if="state.diskInfo && state.diskInfo.length > 0">
-            <div v-for="disk in state.diskInfo" :key="disk.device" class="disk-item">
-              <div class="disk-header">
-                <span class="disk-device">{{ disk.device }}</span>
-                <span class="disk-mount">{{ disk.mountpoint }}</span>
-              </div>
-              <el-progress 
-                :percentage="disk.usage_percent" 
-                :color="getDiskColor(disk.usage_percent)"
-                :stroke-width="15"
-              />
-              <div class="disk-info">
-                <span>{{ formatBytes(disk.used) }} / {{ formatBytes(disk.total) }}</span>
-                <span>剩余: {{ formatBytes(disk.free) }}</span>
-              </div>
+            <div class="flex items-center gap-2">
+              <el-icon><Files /></el-icon>
+              <span class="font-medium">磁盘使用情况</span>
+              <el-tooltip content="展示磁盘空间使用详情">
+                <el-icon><QuestionFilled /></el-icon>
+              </el-tooltip>
             </div>
-          </div>
-        </el-card>
-      </el-col>
-
-      <!-- 网络信息 -->
-      <el-col :span="12">
-        <el-card class="mb20">
-          <template #header>
-            <span>网络信息</span>
           </template>
-          <div v-if="state.networkInfo && state.networkInfo.length > 0">
-            <div v-for="network in state.networkInfo" :key="network.interface" class="network-item">
-              <div class="network-header">
-                <span class="network-interface">{{ network.interface }}</span>
-              </div>
-              <el-row :gutter="10">
-                <el-col :span="12">
-                  <div class="info-item">
-                    <div class="info-label">发送</div>
-                    <div class="info-value">{{ formatBytes(network.bytes_sent) }}</div>
-                  </div>
-                </el-col>
-                <el-col :span="12">
-                  <div class="info-item">
-                    <div class="info-label">接收</div>
-                    <div class="info-value">{{ formatBytes(network.bytes_recv) }}</div>
-                  </div>
-                </el-col>
-              </el-row>
-            </div>
-          </div>
+          <el-table :data="state.diskInfo" border>
+            <template #empty>
+              <el-empty :image-size="80" description="暂无数据" />
+            </template>
+            <el-table-column label="设备" prop="device" :show-overflow-tooltip="true" min-width="120" />
+            <el-table-column label="挂载点" prop="mountpoint" :show-overflow-tooltip="true" min-width="120" />
+            <el-table-column label="文件系统" prop="fstype" align="center" min-width="100" />
+            <el-table-column prop="usage_percent" label="使用率" align="center" min-width="180">
+              <template #default="{ row }">
+                <el-progress
+                  :percentage="row.usage_percent"
+                  :status="row.usage_percent > 80 ? 'exception' : row.usage_percent > 60 ? 'warning' : 'success'"
+                  :text-inside="true"
+                  :stroke-width="16"
+                />
+              </template>
+            </el-table-column>
+            <el-table-column label="总大小" align="center" min-width="100">
+              <template #default="{ row }">
+                {{ formatBytes(row.total) }}
+              </template>
+            </el-table-column>
+            <el-table-column label="已用" align="center" min-width="100">
+              <template #default="{ row }">
+                {{ formatBytes(row.used) }}
+              </template>
+            </el-table-column>
+            <el-table-column label="可用" align="center" min-width="100">
+              <template #default="{ row }">
+                {{ formatBytes(row.free) }}
+              </template>
+            </el-table-column>
+          </el-table>
         </el-card>
       </el-col>
     </el-row>
 
-    <!-- 进程信息 -->
+    <!-- 网络信息 -->
+    <el-row>
+      <el-col :span="24" class="mb-4">
+        <el-card :loading="state.loading" shadow="hover">
+          <template #header>
+            <div class="flex items-center gap-2">
+              <el-icon><Connection /></el-icon>
+              <span class="font-medium">网络使用情况</span>
+              <el-tooltip content="展示网络接口流量统计">
+                <el-icon><QuestionFilled /></el-icon>
+              </el-tooltip>
+            </div>
+          </template>
+          <el-table :data="state.networkInfo" border>
+            <template #empty>
+              <el-empty :image-size="80" description="暂无数据" />
+            </template>
+            <el-table-column label="网络接口" prop="interface" min-width="120" />
+            <el-table-column label="发送字节" align="center" min-width="120">
+              <template #default="{ row }">
+                {{ formatBytes(row.bytes_sent) }}
+              </template>
+            </el-table-column>
+            <el-table-column label="接收字节" align="center" min-width="120">
+              <template #default="{ row }">
+                {{ formatBytes(row.bytes_recv) }}
+              </template>
+            </el-table-column>
+            <el-table-column label="发送包" prop="packets_sent" align="center" min-width="100" />
+            <el-table-column label="接收包" prop="packets_recv" align="center" min-width="100" />
+            <el-table-column label="发送错误" prop="errout" align="center" min-width="90" />
+            <el-table-column label="接收错误" prop="errin" align="center" min-width="90" />
+            <el-table-column label="发送丢包" prop="dropout" align="center" min-width="90" />
+            <el-table-column label="接收丢包" prop="dropin" align="center" min-width="90" />
+          </el-table>
+        </el-card>
+      </el-col>
+    </el-row>
+
+    <!-- Top 进程 -->
     <el-row>
       <el-col :span="24">
-        <el-card>
+        <el-card :loading="state.loading" shadow="hover">
           <template #header>
-            <span>Top 进程</span>
+            <div class="flex items-center gap-2">
+              <el-icon><List /></el-icon>
+              <span class="font-medium">Top 进程</span>
+              <el-tooltip content="展示CPU占用最高的进程">
+                <el-icon><QuestionFilled /></el-icon>
+              </el-tooltip>
+            </div>
           </template>
-          <el-table :data="state.processInfo" style="width: 100%" stripe>
-            <el-table-column prop="pid" label="PID" width="80" align="center" />
-            <el-table-column prop="name" label="进程名" width="150" />
-            <el-table-column prop="username" label="用户" width="100" />
-            <el-table-column prop="status" label="状态" width="80" align="center" />
-            <el-table-column prop="cpu_percent" label="CPU%" width="80" align="center">
+          <el-table :data="state.processInfo" border stripe>
+            <template #empty>
+              <el-empty :image-size="80" description="暂无数据" />
+            </template>
+            <el-table-column prop="pid" label="PID" min-width="80" align="center" />
+            <el-table-column prop="name" label="进程名" min-width="150" :show-overflow-tooltip="true" />
+            <el-table-column prop="username" label="用户" min-width="100" />
+            <el-table-column prop="status" label="状态" min-width="80" align="center" />
+            <el-table-column prop="cpu_percent" label="CPU%" min-width="90" align="center">
               <template #default="{ row }">
                 <el-tag :type="getCPUTagType(row.cpu_percent)" size="small">
                   {{ row.cpu_percent }}%
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="memory_percent" label="内存%" width="80" align="center">
+            <el-table-column prop="memory_percent" label="内存%" min-width="90" align="center">
               <template #default="{ row }">
                 <el-tag :type="getMemoryTagType(row.memory_percent)" size="small">
                   {{ row.memory_percent }}%
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="memory_info" label="内存使用" width="100" align="center">
+            <el-table-column label="内存使用" min-width="110" align="center">
               <template #default="{ row }">
                 {{ formatBytes(row.memory_info) }}
               </template>
             </el-table-column>
-            <el-table-column prop="create_time" label="创建时间" width="150" />
-            <el-table-column prop="cmdline" label="命令行" min-width="200" show-overflow-tooltip />
+            <el-table-column prop="create_time" label="创建时间" min-width="150" />
+            <el-table-column prop="cmdline" label="命令行" min-width="200" :show-overflow-tooltip="true" />
           </el-table>
         </el-card>
       </el-col>
@@ -240,7 +341,10 @@
 <script lang="ts" setup name="MonitorServer">
 import { onMounted, reactive, onUnmounted } from 'vue';
 import { ElMessage } from 'element-plus';
-import { Refresh } from '@element-plus/icons-vue';
+import { 
+  Refresh, Cpu, Memo, Monitor, QuestionFilled, 
+  Files, Connection, List 
+} from '@element-plus/icons-vue';
 import { useServerMonitorApi, type ServerMonitorData } from '/@/api/v1/monitor/server';
 
 interface StateRow {
@@ -302,24 +406,6 @@ const formatBytes = (bytes: number): string => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 };
 
-const getCPUColor = (percentage: number): string => {
-  if (percentage < 50) return '#67c23a';
-  if (percentage < 80) return '#e6a23c';
-  return '#f56c6c';
-};
-
-const getMemoryColor = (percentage: number): string => {
-  if (percentage < 60) return '#67c23a';
-  if (percentage < 85) return '#e6a23c';
-  return '#f56c6c';
-};
-
-const getDiskColor = (percentage: number): string => {
-  if (percentage < 70) return '#67c23a';
-  if (percentage < 90) return '#e6a23c';
-  return '#f56c6c';
-};
-
 const getCPUTagType = (percentage: number): string => {
   if (percentage < 50) return 'success';
   if (percentage < 80) return 'warning';
@@ -347,84 +433,71 @@ onUnmounted(() => {
 });
 </script>
 
-<style scoped>
-.card-header {
+<style lang="scss" scoped>
+.mb-4 {
+  margin-bottom: 16px;
+}
+
+.flex {
   display: flex;
-  justify-content: space-between;
+}
+
+.items-center {
   align-items: center;
 }
 
-.info-item {
+.justify-between {
+  justify-content: space-between;
+}
+
+.gap-2 {
+  gap: 8px;
+}
+
+.text-center {
   text-align: center;
-  padding: 10px;
 }
 
-.info-label {
-  font-size: 12px;
-  color: #909399;
-  margin-bottom: 5px;
+.font-medium {
+  font-weight: 500;
 }
 
-.info-value {
-  font-size: 16px;
-  font-weight: bold;
-  color: #303133;
+.h-full {
+  height: 100%;
 }
 
-.progress-item {
-  margin-bottom: 15px;
-}
-
-.progress-label {
+.card-title {
+  display: block;
   font-size: 14px;
   color: #606266;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
+  font-weight: 500;
 }
 
-.disk-item {
-  margin-bottom: 20px;
-}
-
-.disk-header {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 8px;
-}
-
-.disk-device {
-  font-weight: bold;
-  color: #303133;
-}
-
-.disk-mount {
-  color: #909399;
-  font-size: 12px;
-}
-
-.disk-info {
-  display: flex;
-  justify-content: space-between;
-  font-size: 12px;
-  color: #909399;
-  margin-top: 5px;
-}
-
-.network-item {
-  margin-bottom: 15px;
-  padding-bottom: 15px;
+:deep(.el-card__header) {
+  padding: 16px 20px;
   border-bottom: 1px solid #ebeef5;
 }
 
-.network-item:last-child {
-  border-bottom: none;
+:deep(.el-card__body) {
+  padding: 20px;
 }
 
-.network-header {
-  margin-bottom: 10px;
+:deep(.el-descriptions__label) {
+  font-weight: 500;
 }
 
-.network-interface {
-  font-weight: bold;
-  color: #303133;
+:deep(.el-progress-circle) {
+  width: 120px !important;
+  height: 120px !important;
+}
+
+:deep(.el-table) {
+  font-size: 13px;
+}
+
+:deep(.el-table th) {
+  background-color: #f5f7fa;
+  font-weight: 600;
 }
 </style>

@@ -65,6 +65,6 @@ class SystemInfoResponse(BaseModel):
                 "description": "企业级管理系统",
                 "base_url": "http://127.0.0.1:8100",
                 "api_prefix": "/api",
-                "timestamp": "2024-01-16T10:00:00"
+                "timestamp": "2026-01-16T10:00:00"
             }
         }
